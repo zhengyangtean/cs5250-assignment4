@@ -41,7 +41,31 @@ def FCFS_scheduling(process_list):
 #Output_1 : Schedule list contains pairs of (time_stamp, proccess_id) indicating the time switching to that proccess_id
 #Output_2 : Average Waiting Time
 def RR_scheduling(process_list, time_quantum ):
-    return (["to be completed, scheduling process_list on round robin policy with time_quantum"], 0.0)
+    schedule = []
+    current_time = 0
+    waiting_time = 0
+    average_waiting_time = 0
+
+    current_job = []
+    current_job.append(process_list[0])
+    remaining_process_list = process_list[1:]
+
+    while len(current_job) > 0 or len(remaining_process_list) > 0:
+        for process in current_job:
+            schedule.append((current_time, process.id))
+            timeslice = min(time_quantum, process.burst_time)
+            process.burst_time -= timeslice
+            if process.burst_time <= 0:
+                current_job.remove(process)
+            current_time += timeslice 
+        if len(current_job) == 0 and len(remaining_process_list) > 0:
+            current_time += 1
+        if len(remaining_process_list) > 0:
+            if remaining_process_list[0].arrive_time <= current_time:
+                current_job.append(remaining_process_list[0])
+                remaining_process_list = remaining_process_list[1:]
+
+    return schedule, average_waiting_time
 
 def SRTF_scheduling(process_list):
     return (["to be completed, scheduling process_list on SRTF, using process.burst_time to calculate the remaining time of the current process "], 0.0)
