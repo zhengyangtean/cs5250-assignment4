@@ -10,6 +10,7 @@ Output files:
     SJF.txt
 '''
 import sys
+import copy
 
 input_file = 'input.txt'
 
@@ -49,7 +50,7 @@ def RR_scheduling(process_list, time_quantum ):
     average_waiting_time = 0
     job_queue = []
     number_jobs = len(process_list)
-    remaining_process_list = process_list
+    remaining_process_list = copy.deepcopy(process_list)
     while len(job_queue) > 0 or len(remaining_process_list) > 0:
         # check if new job entered
         while len(remaining_process_list) > 0:
@@ -61,7 +62,6 @@ def RR_scheduling(process_list, time_quantum ):
             else:
                 break
         # process job
-        print(current_time,job_queue)
         if len(job_queue) > 0:
             current_job = job_queue[0]
             job_queue.remove(current_job)
@@ -86,10 +86,59 @@ def RR_scheduling(process_list, time_quantum ):
 
     return schedule, average_waiting_time
 
-
+def get_shortest_burst(job_queue):
+    shortest_job = job_queue[0]
+    shortest_burst = shortest_job.burst_time
+    for job in job_queue:
+        if job.burst_time < shortest_job.burst_time:
+            shortest_job = job
+            shortest_burst = job.burst_time
+    return shortest_job
 
 def SRTF_scheduling(process_list):
-    return (["to be completed, scheduling process_list on SRTF, using process.burst_time to calculate the remaining time of the current process "], 0.0)
+    schedule = []
+    current_time = 0
+    waiting_time = 0
+    average_waiting_time = 0
+    time_quantum = 1
+    job_queue = []
+    previous_id = -1
+    number_jobs = len(process_list)
+    remaining_process_list = copy.deepcopy(process_list)
+    while len(job_queue) > 0 or len(remaining_process_list) > 0:
+        # check if new job entered
+        while len(remaining_process_list) > 0:
+            nextjob = remaining_process_list[0]
+            if nextjob.arrive_time <= current_time:
+                job_queue.append(nextjob)
+                remaining_process_list.remove(nextjob)
+            else:
+                break
+        # process job
+        if len(job_queue) > 0:
+            current_job = get_shortest_burst(job_queue)
+            job_queue.remove(current_job)
+            if previous_id != current_job.id:
+                schedule.append((current_time,current_job.id))
+                previous_id = current_job.id
+            time_slice = min(time_quantum, current_job.burst_time)
+            current_job.burst_time -= time_slice
+            current_time += time_slice
+            # check if new job entered before enqueing finished job
+            while len(remaining_process_list) > 0:
+                nextjob = remaining_process_list[0]
+                if nextjob.arrive_time <= current_time:
+                    job_queue.append(nextjob)
+                    remaining_process_list.remove(nextjob)
+                else:
+                    break
+            if  current_job.burst_time > 0:
+                job_queue.append(current_job)
+            else:
+                waiting_time += (current_time - current_job.burst_time - current_job.arrive_time)
+        average_waiting_time = waiting_time / number_jobs
+
+    return schedule, average_waiting_time
 
 def SJF_scheduling(process_list, alpha):
     return (["to be completed, scheduling SJF without using information from process.burst_time"],0.0)
