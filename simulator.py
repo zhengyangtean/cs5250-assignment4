@@ -20,6 +20,7 @@ class Process:
         self.id = id
         self.arrive_time = arrive_time
         self.burst_time = burst_time
+        self.predicted_burst = 0
     #for printing purpose
     def __repr__(self):
         return ('[id %d : arrival_time %d,  burst_time %d]'%(self.id, self.arrive_time, self.burst_time))
@@ -140,8 +141,76 @@ def SRTF_scheduling(process_list):
 
     return schedule, average_waiting_time
 
+def predict_burst(process, alpha, previous_burst, previous_predicted_burst):
+    predicted_burst = alpha*predicted_burst + (1-alpha) * previous_predicted_burst
+    return  predicted_burst
+
+def get_shortest_predicted_burst(job_queue):
+    shortest_job = job_queue[0]
+    shortest_predicted_burst = shortest_job.predicted_burst
+    for job in job_queue:
+        if job.predicted_burst < shortest_job.predicted_burst:
+            shortest_job = job
+            shortest_burst = job.predicted_burst
+    return shortest_job
+
 def SJF_scheduling(process_list, alpha):
-    return (["to be completed, scheduling SJF without using information from process.burst_time"],0.0)
+    schedule = []
+    history = {}
+    INITIAL_PREDICTED_BURST = 5
+    current_time = 0
+    waiting_time = 0
+    average_waiting_time = 0
+    time_quantum = 1
+    job_queue = []
+    previous_id = -1
+    number_jobs = len(process_list)
+    remaining_process_list = copy.deepcopy(process_list)
+    while len(job_queue) > 0 or len(remaining_process_list) > 0:
+        # check if new job entered
+        while len(remaining_process_list) > 0:
+            nextjob = remaining_process_list[0]
+            if nextjob.arrive_time <= current_time:
+                if nextjob.id in history:
+                    nextjob.predicted_burst = predict_burst(nextjob, alpha, history[nextjob.id]["previous_burst"], history[nextjob.id]["previous_predicted_burst"])
+                else:
+                    nextjob.predicted_burst = INITIAL_PREDICTED_BURST
+                history[nextjob.id] = {}
+                history[nextjob.id]["previous_predicted_burst"] = nextjob.predicted_burst
+                history[nextjob.id]["previous_burst"] = nextjob.burst_time
+                job_queue.append(nextjob)
+                remaining_process_list.remove(nextjob)
+            else:
+                break
+        # process job
+        if len(job_queue) > 0:
+            current_job = get_shortest_predicted_burst(job_queue)
+            job_queue.remove(current_job)
+            if previous_id != current_job.id:
+                schedule.append((current_time,current_job.id))
+                previous_id = current_job.id
+            current_time +=  current_job.burst_time
+            waiting_time += (current_time - current_job.burst_time - current_job.arrive_time)
+            # check if new job entered before enqueing finished job
+            while len(remaining_process_list) > 0:
+                nextjob = remaining_process_list[0]
+                if nextjob.arrive_time <= current_time:
+                    if nextjob.id in history:
+                        predicted_burst = predict_burst(nextjob, alpha, history[nextjob.id]["previous_burst"], history[nextjob.id]["previous_predicted_burst"])
+                        nextjob.predicted_burst = predicted_burst
+                    else:
+                        predicted_burst = INITIAL_PREDICTED_BURST
+                    history[nextjob.id] = {}
+                    history[nextjob.id]["previous_predicted_burst"] = predicted_burst
+                    history[nextjob.id]["previous_burst"] = nextjob.burst_time
+                    job_queue.append(nextjob)
+                    remaining_process_list.remove(nextjob)
+                else:
+                    break
+
+        average_waiting_time = waiting_time / number_jobs
+
+    return schedule, average_waiting_time
 
 
 def read_input():
