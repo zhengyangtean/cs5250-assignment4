@@ -40,7 +40,6 @@ def FCFS_scheduling(process_list):
     return schedule, average_waiting_time
 
 #Input: process_list, time_quantum (Positive Integer)
-#Assumption that CPU will never be idle
 #Assumption if a new process comes in while a process is currently running, it will be enqueued first, the current running process will queue behind it once it completes
 #Output_1 : Schedule list contains pairs of (time_stamp, proccess_id) indicating the time switching to that proccess_id
 #Output_2 : Average Waiting Time
