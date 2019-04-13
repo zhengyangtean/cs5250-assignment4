@@ -50,10 +50,12 @@ def RR_scheduling(process_list, time_quantum ):
     waiting_time = 0
     average_waiting_time = 0
     job_queue = []
+    idle_time = 0
     number_jobs = len(process_list)
     remaining_process_list = copy.deepcopy(process_list)
     while len(job_queue) > 0 or len(remaining_process_list) > 0:
         # check if new job entered
+        ran = False
         while len(remaining_process_list) > 0:
             nextjob = remaining_process_list[0]
             if nextjob.arrive_time <= current_time:
@@ -70,6 +72,7 @@ def RR_scheduling(process_list, time_quantum ):
             time_slice = min(time_quantum, current_job.burst_time)
             current_job.burst_time -= time_slice
             current_time += time_slice
+            ran = True
             # check if new job entered before enqueing finished job
             while len(remaining_process_list) > 0:
                 nextjob = remaining_process_list[0]
@@ -84,6 +87,9 @@ def RR_scheduling(process_list, time_quantum ):
             else:
                 waiting_time += (current_time - current_job.burst_time - current_job.arrive_time)
         average_waiting_time = waiting_time / number_jobs
+        if not ran:
+            current_time += 1
+            idle_time +=1
 
     return schedule, average_waiting_time
 
@@ -100,6 +106,7 @@ def SRTF_scheduling(process_list):
     schedule = []
     current_time = 0
     waiting_time = 0
+    idle_time = 0
     average_waiting_time = 0
     time_quantum = 1
     job_queue = []
@@ -108,6 +115,7 @@ def SRTF_scheduling(process_list):
     remaining_process_list = copy.deepcopy(process_list)
     while len(job_queue) > 0 or len(remaining_process_list) > 0:
         # check if new job entered
+        ran = False
         while len(remaining_process_list) > 0:
             nextjob = remaining_process_list[0]
             if nextjob.arrive_time <= current_time:
@@ -125,6 +133,7 @@ def SRTF_scheduling(process_list):
             time_slice = min(time_quantum, current_job.burst_time)
             current_job.burst_time -= time_slice
             current_time += time_slice
+            ran = True
             # check if new job entered before enqueing finished job
             while len(remaining_process_list) > 0:
                 nextjob = remaining_process_list[0]
@@ -138,11 +147,14 @@ def SRTF_scheduling(process_list):
             else:
                 waiting_time += (current_time - current_job.burst_time - current_job.arrive_time)
         average_waiting_time = waiting_time / number_jobs
+        if not ran:
+            current_time += 1
+            idle_time +=1
 
     return schedule, average_waiting_time
 
 def predict_burst(process, alpha, previous_burst, previous_predicted_burst):
-    predicted_burst = alpha*predicted_burst + (1-alpha) * previous_predicted_burst
+    predicted_burst = alpha*previous_burst + (1-alpha) * previous_predicted_burst
     return  predicted_burst
 
 def get_shortest_predicted_burst(job_queue):
@@ -159,6 +171,7 @@ def SJF_scheduling(process_list, alpha):
     history = {}
     INITIAL_PREDICTED_BURST = 5
     current_time = 0
+    idle_time = 0
     waiting_time = 0
     average_waiting_time = 0
     time_quantum = 1
@@ -168,6 +181,7 @@ def SJF_scheduling(process_list, alpha):
     remaining_process_list = copy.deepcopy(process_list)
     while len(job_queue) > 0 or len(remaining_process_list) > 0:
         # check if new job entered
+        ran = False
         while len(remaining_process_list) > 0:
             nextjob = remaining_process_list[0]
             if nextjob.arrive_time <= current_time:
@@ -191,6 +205,7 @@ def SJF_scheduling(process_list, alpha):
                 previous_id = current_job.id
             current_time +=  current_job.burst_time
             waiting_time += (current_time - current_job.burst_time - current_job.arrive_time)
+            ran = True
             # check if new job entered before enqueing finished job
             while len(remaining_process_list) > 0:
                 nextjob = remaining_process_list[0]
@@ -207,6 +222,9 @@ def SJF_scheduling(process_list, alpha):
                     remaining_process_list.remove(nextjob)
                 else:
                     break
+        if not ran:
+            current_time += 1
+            idle_time +=1
 
         average_waiting_time = waiting_time / number_jobs
 
